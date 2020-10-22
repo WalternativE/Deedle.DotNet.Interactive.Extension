@@ -1,9 +1,5 @@
 ﻿namespace Deedle.DotNet.Interactive.Extension
 
-// for some reasons the dotnet interactive team has quite odd deps
-// make sure to add this myget feed to your sorces
-// https://dotnet.myget.org/feed/fsharp/package/nuget/FSharp.Compiler.Private.Scripting/10.7.1-beta.20154.1#
-// you'll still crash and burn for the newest versions but you'll get at least a bit more recent
 open System
 open System.Threading.Tasks
 open System.IO
@@ -12,7 +8,6 @@ open Microsoft.DotNet.Interactive.Formatting
 open Microsoft.DotNet.Interactive.FSharp.FSharpKernelHelpers.Html
 open Deedle
 open Deedle.Internal
-
 
 type DeedleFormatterExtension() =
 
@@ -33,6 +28,9 @@ type DeedleFormatterExtension() =
         | Some v -> v.ToString()
         | None -> def
 
+    let determineType (nullable: 'a) =
+        typeof<'a>
+
     /// Super opinionated because I know what the pattern looks like
     /// Don't trust me on this
     let peekAtSeriesTypes (s: ((obj * OptionalValue<obj>) seq)) =
@@ -40,7 +38,7 @@ type DeedleFormatterExtension() =
             None
         else
             let (k, v) = Seq.head s
-            (k.GetType(), (v.ValueOrDefault.GetType()))
+            (k.GetType(), determineType v.ValueOrDefault)
             |> Some
 
     let getHtml (formattable: IFsiFormattable) (context: FormatContext) =
@@ -99,7 +97,7 @@ type DeedleFormatterExtension() =
 
                         let rowSummary =
                             if notShownRows < 1 then None else
-                            sprintf "%i rows" notShownRows |> Some
+                            sprintf "%i additional rows" notShownRows |> Some
 
                         let columnSummary =
                             if notShownColumns < 1 then None else
@@ -118,7 +116,7 @@ type DeedleFormatterExtension() =
                             match (rowSummary, columnSummary) with
                             | None, None -> None
                             | Some rs, None ->
-                                span [] [ sprintf "...with %s additional rows" rs |> str ]
+                                span [] [ sprintf "...with %s" rs |> str ]
                                 |> Some
                             | None, Some cs ->
                                 span [] [
@@ -129,7 +127,7 @@ type DeedleFormatterExtension() =
                                 |> Some
                             | Some rs, Some cs ->
                                 span [] [
-                                    sprintf "...with %s additional rows and %i additional variables: " rs notShownColumns |> str
+                                    sprintf "...with %s and %i additional variables: " rs notShownColumns |> str
                                     br [] []
                                     yield! cs
                                 ]
@@ -177,7 +175,7 @@ type DeedleFormatterExtension() =
                                         ])
                                     if rowCount > maxRows then tr [] [
                                         yield! fun _ -> td [] [ str "..." ]
-                                        |> Seq.init ((min columnCount maxCols) + 2)
+                                        |> Seq.init ((min columnCount maxCols) + 1)
                                     ]
                                 ]
                             ]
@@ -193,20 +191,29 @@ type DeedleFormatterExtension() =
             |> df.Apply
         | _ -> None
 
+    let registerFormatter () =
+        Formatter.Register<IFsiFormattable>(Func<FormatContext, IFsiFormattable, TextWriter, bool>(fun (context: FormatContext) (formattable: IFsiFormattable) (writer: TextWriter) ->
+            if context.ContentThreshold < 1.0 then false else
+
+            context.ReduceContent(0.2)
+            |> ignore
+
+            match getHtml formattable context with
+            | Some v -> writer.Write v
+            | None -> writer.Write ""
+
+            true
+        ), mimeType = "text/html")
 
     interface IKernelExtension with
-        member this.OnLoadAsync kernel =
-            Formatter.Register<IFsiFormattable>(Func<FormatContext, IFsiFormattable, TextWriter, bool>(fun (context: FormatContext) (formattable: IFsiFormattable) (writer: TextWriter) ->
-                if context.ContentThreshold < 1.0 then false else
+        member _.OnLoadAsync _ =
+            registerFormatter()
 
-                context.ReduceContent(0.2)
+            if isNull KernelInvocationContext.Current |> not then
+                let message =
+                    (nameof DeedleFormatterExtension, nameof Frame<_,_>, nameof Series<_, _>)
+                    |||> sprintf "Added %s including formatters for %s and %s"
+                KernelInvocationContext.Current.Display(message, "text/markdown")
                 |> ignore
-
-                match getHtml formattable context with
-                | Some v -> writer.Write v
-                | None -> writer.Write ""
-
-                true
-            ), mimeType = "text/html")
 
             Task.CompletedTask

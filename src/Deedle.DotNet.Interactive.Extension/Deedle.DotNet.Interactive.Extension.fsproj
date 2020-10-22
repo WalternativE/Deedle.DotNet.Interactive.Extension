@@ -2,16 +2,28 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup>
+    <Version>0.1.0-alpha1</Version>
     <IsPackable>true</IsPackable>
     <OutputType>Library</OutputType>
+    <PackageDescription>Experimental Deedle formatters for dotnet interactive notebooks</PackageDescription>
+    <IncludeBuildOutput>true</IncludeBuildOutput>
+    <NoWarn>$(NoWarn);NU5100</NoWarn><!-- dll outside of lib/ folder -->
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Library.fs" />
+    <Compile Include="Extension.fs" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="bin\**" />
+    <EmbeddedResource Remove="bin\**" />
+    <None Remove="bin\**" />
+  </ItemGroup>
+
 
   <ItemGroup>
     <PackageReference Include="Deedle" Version="2.3.0" />
@@ -20,4 +32,7 @@
     <PackageReference Include="Microsoft.DotNet.Interactive.FSharp" Version="1.0.0-beta.20426.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="$(OutputPath)/Deedle.DotNet.Interactive.Extension.dll" Pack="true" PackagePath="interactive-extensions/dotnet" />
+  </ItemGroup>
 </Project>
