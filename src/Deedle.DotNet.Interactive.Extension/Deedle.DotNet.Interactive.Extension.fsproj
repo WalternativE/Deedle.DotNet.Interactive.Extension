@@ -1,12 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup>
-    <Version>0.1.0-alpha1</Version>
+    <Version>0.1.0-alpha2</Version>
     <IsPackable>true</IsPackable>
     <OutputType>Library</OutputType>
     <PackageDescription>Experimental Deedle formatters for dotnet interactive notebooks</PackageDescription>
@@ -24,12 +24,11 @@
     <None Remove="bin\**" />
   </ItemGroup>
 
-
   <ItemGroup>
     <PackageReference Include="Deedle" Version="2.3.0" />
-    <PackageReference Include="Microsoft.DotNet.Interactive" Version="1.0.0-beta.20522.4" />
-    <PackageReference Include="Microsoft.DotNet.Interactive.Formatting" Version="1.0.0-beta.20522.4" />
-    <PackageReference Include="Microsoft.DotNet.Interactive.FSharp" Version="1.0.0-beta.20522.4" />
+    <PackageReference Include="Microsoft.DotNet.Interactive" Version="1.0.0-beta.20574.9" />
+    <PackageReference Include="Microsoft.DotNet.Interactive.Formatting" Version="1.0.0-beta.20574.9" />
+    <PackageReference Include="Microsoft.DotNet.Interactive.FSharp" Version="1.0.0-beta.20574.9" />
   </ItemGroup>
 
   <ItemGroup>

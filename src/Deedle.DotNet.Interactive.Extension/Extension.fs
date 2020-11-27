@@ -192,7 +192,7 @@ type DeedleFormatterExtension() =
         | _ -> None
 
     let registerFormatter () =
-        Formatter.Register<IFsiFormattable>(Func<FormatContext, IFsiFormattable, TextWriter, bool>(fun (context: FormatContext) (formattable: IFsiFormattable) (writer: TextWriter) ->
+        Formatter.Register<IFsiFormattable>((fun (context: FormatContext) (formattable: IFsiFormattable) (writer: TextWriter) ->
             if context.ContentThreshold < 1.0 then false else
 
             context.ReduceContent(0.2)
