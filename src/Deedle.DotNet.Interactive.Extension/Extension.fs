@@ -10,26 +10,39 @@ open Deedle
 open Deedle.Internal
 
 type DeedleFormatterExtension() =
-
     let maxRows = 20
     let maxCols = 15
 
-    let (|SeriesValues|_|) (value : obj) = 
-        let iser = value.GetType().GetInterface("ISeries`1")
-        if not (isNull iser) then 
-            let keys = 
-                value.GetType().GetProperty("Keys").GetValue(value) :?> System.Collections.IEnumerable
-            let vector = value.GetType().GetProperty("Vector").GetValue(value) :?> IVector
+    let (|SeriesValues|_|) (value: obj) =
+        let iser =
+            value.GetType().GetInterface("ISeries`1")
+
+        if not (isNull iser) then
+            let keys =
+                value
+                    .GetType()
+                    .GetProperty("Keys")
+                    .GetValue(value)
+                :?> System.Collections.IEnumerable
+
+            let vector =
+                value
+                    .GetType()
+                    .GetProperty("Vector")
+                    .GetValue(value)
+                :?> IVector
+
             Some(Seq.zip (Seq.cast<obj> keys) vector.ObjectSequence)
-        else None
+        else
+            None
 
     // TODO: make this configurable for floats and such
-    let formatValue (def: string) = function
+    let formatValue (def: string) =
+        function
         | Some v -> v.ToString()
         | None -> def
 
-    let determineType (nullable: 'a) =
-        typeof<'a>
+    let determineType (nullable: 'a) = typeof<'a>
 
     /// Super opinionated because I know what the pattern looks like
     /// Don't trust me on this
@@ -38,6 +51,7 @@ type DeedleFormatterExtension() =
             None
         else
             let (k, v) = Seq.head s
+
             (k.GetType(), determineType v.ValueOrDefault)
             |> Some
 
@@ -45,174 +59,197 @@ type DeedleFormatterExtension() =
         match formattable with
         | SeriesValues s ->
             let typeInfo =
-                peekAtSeriesTypes s |> function
+                peekAtSeriesTypes s
+                |> function
                 | None -> String.Empty
-                | Some (keyType, valueType) ->
-                    sprintf "Key type: %A Value type: %A" keyType valueType
+                | Some (keyType, _) ->
+                    // deedle optionals are hard to inspect so I rather don't show them at all
+                    $"Key type: %A{keyType}"
 
             let entries = Seq.length s
             let toBeShown = Seq.take (min maxCols entries) s
 
             div [] [
                 table [] [
-                    caption [] [ sprintf "A series: %i values. %s" entries typeInfo |> str ]
+                    caption [] [
+                        str $"A series: %i{entries} values. %s{typeInfo}"
+                    ]
                     thead [] [
                         thead [] [
                             th [] [ str "Keys" ]
-                            yield! toBeShown
-                            |> Seq.map (fun kvp -> th [] [ str (fst kvp |> string) ])
-                            if entries > maxCols then th [] [ str "..." ]
+                            yield!
+                                toBeShown
+                                |> Seq.map (fun kvp -> th [] [ str (fst kvp |> string) ])
+                            if entries > maxCols then
+                                th [] [ str "..." ]
                         ]
                     ]
                     tbody [] [
                         td [] [ str "Values" ]
-                        yield! toBeShown
-                        |> Seq.map (fun kvp -> td [] [ str (snd kvp |> string) ])
-                        if entries > maxCols then th [] [ str "..." ]
+                        yield!
+                            toBeShown
+                            |> Seq.map (fun kvp -> td [] [ str (snd kvp |> string) ])
+                        if entries > maxCols then
+                            th [] [ str "..." ]
                     ]
                 ]
             ]
             |> Some
         | :? IFrame as df ->
-            {
-                new IFrameOperation<_> with
-                    member x.Invoke(df: Frame<_, _>) =
-                        let keyRepresentations =
-                            df.ColumnKeys
-                            |> Seq.map (sprintf "%A")
+            { new IFrameOperation<_> with
+                member x.Invoke(df: Frame<_, _>) =
+                    let keyRepresentations = df.ColumnKeys |> Seq.map (sprintf "%A")
 
-                        let typeRepresenations =
-                            df.ColumnTypes
-                            |> Seq.map string
+                    let typeRepresenations = df.ColumnTypes |> Seq.map string
 
-                        let keysAndTypes =
-                            (keyRepresentations, typeRepresenations)
-                            ||> Seq.zip
+                    let keysAndTypes =
+                        (keyRepresentations, typeRepresenations)
+                        ||> Seq.zip
 
-                        let rowCount = df.RowCount
-                        let columnCount = keyRepresentations |> Seq.length
+                    let rowCount = df.RowCount
+                    let columnCount = keyRepresentations |> Seq.length
 
-                        let notShownRows = rowCount - maxRows |> max 0
-                        let notShownColumns = columnCount - maxCols |> max 0
+                    let notShownRows = rowCount - maxRows |> max 0
+                    let notShownColumns = columnCount - maxCols |> max 0
 
-                        let rowSummary =
-                            if notShownRows < 1 then None else
-                            sprintf "%i additional rows" notShownRows |> Some
+                    let rowSummary =
+                        if notShownRows < 1 then
+                            None
+                        else
+                            Some $"%i{notShownRows} additional rows"
 
-                        let columnSummary =
-                            if notShownColumns < 1 then None else
+                    let columnSummary =
+                        if notShownColumns < 1 then
+                            None
+                        else
                             keysAndTypes
                             |> Seq.skip maxCols
-                            |> Seq.map (fun (k, v) ->
-                                span [ ] [
-                                    str " "
-                                    b [] [ str k ]
-                                    small [] [ sprintf " <%s>" v |> str ]
-                                    str " "
-                                ])
+                            |> Seq.map
+                                (fun (k, v) ->
+                                    span [] [
+                                        str " "
+                                        b [] [ str k ]
+                                        small [] [ str $" <%s{v}>" ]
+                                        str " "
+                                    ])
                             |> Some
 
-                        let summary =
-                            match (rowSummary, columnSummary) with
-                            | None, None -> None
-                            | Some rs, None ->
-                                span [] [ sprintf "...with %s" rs |> str ]
-                                |> Some
-                            | None, Some cs ->
-                                span [] [
-                                    sprintf "...with %i additional variables: " notShownColumns |> str
-                                    br [] []
-                                    yield! cs
-                                ]
-                                |> Some
-                            | Some rs, Some cs ->
-                                span [] [
-                                    sprintf "...with %s and %i additional variables: " rs notShownColumns |> str
-                                    br [] []
-                                    yield! cs
-                                ]
-                                |> Some
+                    let summary =
+                        match (rowSummary, columnSummary) with
+                        | None, None -> None
+                        | Some rs, None -> span [] [ str $"...with %s{rs}" ] |> Some
+                        | None, Some cs ->
+                            span [] [
+                                str $"...with %i{notShownColumns} additional variables: "
+                                br [] []
+                                yield! cs
+                            ]
+                            |> Some
+                        | Some rs, Some cs ->
+                            span [] [
+                                str $"...with %s{rs} and %i{notShownColumns} additional variables: "
+                                br [] []
+                                yield! cs
+                            ]
+                            |> Some
 
-                        div [] [
-                            table [] [
-                                caption [] [ sprintf "A frame: %i x %i" rowCount columnCount |> str ]
-                                thead [] [
-                                    tr [] [
-                                        th [] []
-                                        yield! df.ColumnKeys
+                    div [] [
+                        table [] [
+                            caption [] [
+                                str $"A frame: %i{rowCount} x %i{columnCount}"
+                            ]
+                            thead [] [
+                                tr [] [
+                                    th [] []
+                                    yield!
+                                        df.ColumnKeys
                                         |> Seq.take (min maxCols columnCount)
                                         |> Seq.map (fun ck -> th [] [ str (ck.ToString()) ])
-                                        if maxCols < columnCount then th [] [ str "..." ]
-                                    ]
-                                    tr [] [
-                                        th [] []
-                                        yield! df.ColumnTypes
+                                    if maxCols < columnCount then
+                                        th [] [ str "..." ]
+                                ]
+                                tr [] [
+                                    th [] []
+                                    yield!
+                                        df.ColumnTypes
                                         |> Seq.take (min maxCols columnCount)
                                         |> Seq.map (fun ct -> th [] [ ct |> string |> str ])
-                                        if maxCols < columnCount then th [] [ str "..." ]
-                                    ]
+                                    if maxCols < columnCount then
+                                        th [] [ str "..." ]
                                 ]
-                                tbody [] [
-                                    yield! df
-                                    |> Frame.sliceCols (df.ColumnKeys |> Seq.take (min columnCount maxCols))
+                            ]
+                            tbody [] [
+                                yield!
+                                    df
+                                    |> Frame.sliceCols (
+                                        df.ColumnKeys
+                                        |> Seq.take (min columnCount maxCols)
+                                    )
                                     |> Frame.take (min maxRows rowCount)
                                     |> Frame.rows
                                     |> Series.observationsAll
-                                    |> Seq.map (fun item ->
-                                        let def, k, data =
-                                            match item with
-                                            | k, Some d -> "N/A", k.ToString(), Series.observationsAll d |> Seq.map snd
-                                            | k, _ -> "N/A", k.ToString(), df.ColumnKeys |> Seq.map (fun _ -> None)
-                                        let toRow v =
-                                            td [] [ embed context v ]
-                                        let row =
-                                            data
-                                            |> Seq.map (formatValue def >> toRow)
-                                        tr [] [
-                                            td [] [ embed context k ]
-                                            yield! row
-                                            if columnCount > maxCols then td [] [ str "..." ]
-                                        ])
-                                    if rowCount > maxRows then tr [] [
-                                        yield! fun _ -> td [] [ str "..." ]
-                                        |> Seq.init ((min columnCount maxCols) + 1)
+                                    |> Seq.map
+                                        (fun item ->
+                                            let def, k, data =
+                                                match item with
+                                                | k, Some d ->
+                                                    "N/A", k.ToString(), Series.observationsAll d |> Seq.map snd
+                                                | k, _ -> "N/A", k.ToString(), df.ColumnKeys |> Seq.map (fun _ -> None)
+
+                                            let toRow v = td [] [ embed context v ]
+
+                                            let row =
+                                                data |> Seq.map (formatValue def >> toRow)
+
+                                            tr [] [
+                                                td [] [ embed context k ]
+                                                yield! row
+                                                if columnCount > maxCols then
+                                                    td [] [ str "..." ]
+                                            ])
+                                if rowCount > maxRows then
+                                    tr [] [
+                                        yield!
+                                            fun _ -> td [] [ str "..." ]
+                                            |> Seq.init ((min columnCount maxCols) + 1)
                                     ]
-                                ]
                             ]
-                            match summary with
-                            | Some s ->
-                                div [] [
-                                    p [] [ s ]
-                                ]
-                            | None -> ()
                         ]
-                        |> Some
-            }
+                        match summary with
+                        | Some s -> div [] [ p [] [ s ] ]
+                        | None -> ()
+                    ]
+                    |> Some }
             |> df.Apply
         | _ -> None
 
     let registerFormatter () =
-        Formatter.Register<IFsiFormattable>((fun (context: FormatContext) (formattable: IFsiFormattable) (writer: TextWriter) ->
-            if context.ContentThreshold < 1.0 then false else
+        Formatter.Register<IFsiFormattable>(
+            (fun (context: FormatContext) (formattable: IFsiFormattable) (writer: TextWriter) ->
+                if context.ContentThreshold < 1.0 then
+                    false
+                else
+                    context.ReduceContent(0.2) |> ignore
 
-            context.ReduceContent(0.2)
-            |> ignore
+                    match getHtml formattable context with
+                    | Some v -> writer.Write v
+                    | None -> writer.Write ""
 
-            match getHtml formattable context with
-            | Some v -> writer.Write v
-            | None -> writer.Write ""
-
-            true
-        ), mimeType = "text/html")
+                    true),
+            mimeType = "text/html"
+        )
 
     interface IKernelExtension with
         member _.OnLoadAsync _ =
-            registerFormatter()
+            registerFormatter ()
 
             if isNull KernelInvocationContext.Current |> not then
                 let message =
-                    (nameof DeedleFormatterExtension, nameof Frame<_,_>, nameof Series<_, _>)
-                    |||> sprintf "Added %s including formatters for %s and %s"
+                    let extName = nameof DeedleFormatterExtension
+                    let frameName = nameof Frame<_, _>
+                    let seriesName = nameof Series<_, _>
+                    $"Added %s{extName} including formatters for %s{frameName} and %s{seriesName}"
+
                 KernelInvocationContext.Current.Display(message, "text/markdown")
                 |> ignore
 
