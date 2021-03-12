@@ -1,4 +1,4 @@
-# Deedle Formatting Extension For DotNet Interactive
+# Deedle Formatting Extension For .NET Interactive
 
 This repo contains a MVP implementation of a possible Deelde `Series` and `Frame` formatter.
 
@@ -7,6 +7,11 @@ This repo contains a MVP implementation of a possible Deelde `Series` and `Frame
 The [Jupyter Notebook](DeedleFormatterTest.ipynb) documents how to build and include the package locally.
 Apart from that it shows how it renders `Series` and `Frame` objects and some ways to interface with
 other extension distributed in the `Microsoft.DotNet.Interactive.ExtensionLab` package.
+
+## Why don't the things render as I want them to?
+
+You might be using .NET Interactive in "stable" Visual Studio Code. Please go and download the insiders version
+and try again.
 
 ## How to get these bits? Gimme!
 
