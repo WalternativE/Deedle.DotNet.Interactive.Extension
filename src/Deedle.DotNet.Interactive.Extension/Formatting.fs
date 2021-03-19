@@ -5,7 +5,7 @@ module Formatting =
     open System.Collections.Generic
     open Microsoft.DotNet.Interactive.Formatting
 
-    let toTabularJsonData (frame: Frame<'a, 'b>) : TabularJsonString =
+    let toTabularDataResource (frame: Frame<'a, 'b>) : TabularDataResource =
         let toDataDict (frame: Frame<'a, 'b>) =
             let colKeys = frame.ColumnKeys
 
@@ -20,9 +20,9 @@ module Formatting =
 
                     dataDict)
 
-        let fields =
-            Seq.zip (frame.ColumnKeys |> Seq.map string) frame.ColumnTypes
-            |> readOnlyDict
+        let schema = TableSchema()
+        Seq.zip (frame.ColumnKeys |> Seq.map string) frame.ColumnTypes
+        |> Seq.iter (fun (key, _type) -> schema.Fields.Add(TableSchemaFieldDescriptor(key, _type.ToTableSchemaFieldType())))
 
-        let dataDict = toDataDict frame
-        TabularJsonString.Create(fields, dataDict)
+
+        TabularDataResource(schema, toDataDict frame)
