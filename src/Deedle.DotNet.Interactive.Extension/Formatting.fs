@@ -24,5 +24,4 @@ module Formatting =
         Seq.zip (frame.ColumnKeys |> Seq.map string) frame.ColumnTypes
         |> Seq.iter (fun (key, _type) -> schema.Fields.Add(TableSchemaFieldDescriptor(key, _type.ToTableSchemaFieldType())))
 
-
         TabularDataResource(schema, toDataDict frame)
