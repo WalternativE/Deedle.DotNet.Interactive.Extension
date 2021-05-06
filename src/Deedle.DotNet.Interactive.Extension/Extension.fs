@@ -55,7 +55,10 @@ type DeedleFormatterExtension() =
             (k.GetType(), determineType v.ValueOrDefault)
             |> Some
 
-    let getHtml (formattable: IFsiFormattable) (context: FormatContext) =
+    // for some reason the return type was changed in the formatting package
+    let eraseSeqType (s: seq<'a>) = s :?> seq<Object>
+
+    let getHtml (formattable: IFsiFormattable) =
         match formattable with
         | SeriesValues s ->
             let typeInfo =
@@ -80,6 +83,7 @@ type DeedleFormatterExtension() =
                             yield!
                                 toBeShown
                                 |> Seq.map (fun kvp -> th [] [ str (fst kvp |> string) ])
+                                |> eraseSeqType
                             if entries > maxCols then
                                 th [] [ str "..." ]
                         ]
@@ -89,6 +93,7 @@ type DeedleFormatterExtension() =
                         yield!
                             toBeShown
                             |> Seq.map (fun kvp -> td [] [ str (snd kvp |> string) ])
+                            |> eraseSeqType
                         if entries > maxCols then
                             th [] [ str "..." ]
                     ]
@@ -142,14 +147,14 @@ type DeedleFormatterExtension() =
                             span [] [
                                 str $"...with %i{notShownColumns} additional variables: "
                                 br [] []
-                                yield! cs
+                                yield! eraseSeqType cs
                             ]
                             |> Some
                         | Some rs, Some cs ->
                             span [] [
                                 str $"...with %s{rs} and %i{notShownColumns} additional variables: "
                                 br [] []
-                                yield! cs
+                                yield! eraseSeqType cs
                             ]
                             |> Some
 
@@ -165,6 +170,7 @@ type DeedleFormatterExtension() =
                                         df.ColumnKeys
                                         |> Seq.take (min maxCols columnCount)
                                         |> Seq.map (fun ck -> th [] [ str (ck.ToString()) ])
+                                        |> eraseSeqType
                                     if maxCols < columnCount then
                                         th [] [ str "..." ]
                                 ]
@@ -174,6 +180,7 @@ type DeedleFormatterExtension() =
                                         df.ColumnTypes
                                         |> Seq.take (min maxCols columnCount)
                                         |> Seq.map (fun ct -> th [] [ ct |> string |> str ])
+                                        |> eraseSeqType
                                     if maxCols < columnCount then
                                         th [] [ str "..." ]
                                 ]
@@ -196,22 +203,24 @@ type DeedleFormatterExtension() =
                                                     "N/A", k.ToString(), Series.observationsAll d |> Seq.map snd
                                                 | k, _ -> "N/A", k.ToString(), df.ColumnKeys |> Seq.map (fun _ -> None)
 
-                                            let toRow v = td [] [ embed context v ]
+                                            let toRow v = td [] [ embedNoContext v ]
 
                                             let row =
                                                 data |> Seq.map (formatValue def >> toRow)
 
                                             tr [] [
-                                                td [] [ embed context k ]
-                                                yield! row
+                                                td [] [ embedNoContext k ]
+                                                yield! eraseSeqType row
                                                 if columnCount > maxCols then
                                                     td [] [ str "..." ]
                                             ])
+                                    |> eraseSeqType
                                 if rowCount > maxRows then
                                     tr [] [
                                         yield!
                                             fun _ -> td [] [ str "..." ]
                                             |> Seq.init ((min columnCount maxCols) + 1)
+                                            |> eraseSeqType
                                     ]
                             ]
                         ]
@@ -225,17 +234,10 @@ type DeedleFormatterExtension() =
 
     let registerFormatter () =
         Formatter.Register<IFsiFormattable>(
-            (fun (context: FormatContext) (formattable: IFsiFormattable) (writer: TextWriter) ->
-                if context.ContentThreshold < 1.0 then
-                    false
-                else
-                    context.ReduceContent(0.2) |> ignore
-
-                    match getHtml formattable context with
-                    | Some v -> writer.Write v
-                    | None -> writer.Write ""
-
-                    true),
+            (fun (formattable: IFsiFormattable) (writer: TextWriter) ->
+                match getHtml formattable with
+                | Some v -> writer.Write v
+                | None -> writer.Write ""),
             mimeType = "text/html"
         )
 

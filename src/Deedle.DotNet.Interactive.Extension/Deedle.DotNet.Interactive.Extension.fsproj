@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <Version>0.1.0-alpha5</Version>
+    <Version>0.1.0-alpha6</Version>
     <IsPackable>true</IsPackable>
     <OutputType>Library</OutputType>
     <PackageDescription>Experimental Deedle formatters for dotnet interactive notebooks</PackageDescription>
@@ -26,11 +26,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="FSharp.Core" Version="5.0.1" />
+    <PackageReference Update="FSharp.Core" Version="5.0.2-beta.21102.10" />
     <PackageReference Include="Deedle" Version="2.3.0" />
-    <PackageReference Include="Microsoft.DotNet.Interactive" Version="1.0.0-beta.21176.4" />
-    <PackageReference Include="Microsoft.DotNet.Interactive.Formatting" Version="1.0.0-beta.21176.4" />
-    <PackageReference Include="Microsoft.DotNet.Interactive.FSharp" Version="1.0.0-beta.21176.4" />
+    <PackageReference Include="Microsoft.DotNet.Interactive" Version="1.0.0-beta.21255.3" />
+    <PackageReference Include="Microsoft.DotNet.Interactive.Formatting" Version="1.0.0-beta.21255.3" />
+    <PackageReference Include="Microsoft.DotNet.Interactive.FSharp" Version="1.0.0-beta.21255.3" />
   </ItemGroup>
 
   <ItemGroup>
