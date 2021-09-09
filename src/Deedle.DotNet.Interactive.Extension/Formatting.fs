@@ -3,7 +3,7 @@ namespace Deedle.DotNet.Interactive.Extension
 module Formatting =
     open Deedle
     open System.Collections.Generic
-    open Microsoft.DotNet.Interactive.Formatting
+    open Microsoft.DotNet.Interactive.Formatting.TabularData
 
     let toTabularDataResource (frame: Frame<'a, 'b>) : TabularDataResource =
         let toDataDict (frame: Frame<'a, 'b>) =
@@ -18,7 +18,7 @@ module Formatting =
                     colKeys
                     |> Seq.iter (fun key -> dataDict.Add(string key, row.Get key))
 
-                    dataDict)
+                    dataDict :> IDictionary<string, obj>)
 
         let schema = TableSchema()
         Seq.zip (frame.ColumnKeys |> Seq.map string) frame.ColumnTypes
