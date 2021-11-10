@@ -252,7 +252,7 @@ type DeedleFormatterExtension() =
                     let seriesName = nameof Series<_, _>
                     $"Added %s{extName} including formatters for %s{frameName} and %s{seriesName}"
 
-                KernelInvocationContext.Current.Display(message, "text/markdown")
+                KernelInvocationContext.Current.Display(message, [| "text/plain" |])
                 |> ignore
 
             Task.CompletedTask

@@ -19,6 +19,7 @@ module Formatting =
                     |> Seq.iter (fun key -> dataDict.Add(string key, row.Get key))
 
                     dataDict :> IDictionary<string, obj>)
+            |> Seq.toList
 
         let schema = TableSchema()
         Seq.zip (frame.ColumnKeys |> Seq.map string) frame.ColumnTypes
