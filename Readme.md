@@ -22,7 +22,7 @@ addional nuget source directly into your notebook cell before loading the packag
 
 ```
 #i "nuget:https://www.myget.org/F/gregs-experimental-packages/api/v3/index.json"
-#r "nuget: Deedle.DotNet.Interactive.Extension,0.1.0-alpha8
+#r "nuget: Deedle.DotNet.Interactive.Extension,0.1.0-alpha9
 ```
 
 ## Something blew up!
