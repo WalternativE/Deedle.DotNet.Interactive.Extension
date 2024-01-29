@@ -11,15 +11,16 @@ module Formatting =
 
             frame.Rows
             |> Series.observations
-            |> Seq.map
-                (fun (_, row) ->
-                    let dataDict = Dictionary<string, obj>()
+            |> Seq.map (fun (_, row) ->
+                let dataDict = Dictionary<string, obj>()
 
-                    colKeys
-                    |> Seq.iter (fun key -> dataDict.Add(string key, row.Get key))
+                colKeys
+                |> Seq.iter (fun key -> dataDict.Add(string key, row.Get key))
 
-                    dataDict :> IDictionary<string, obj>)
-            |> Seq.toList
+                //dataDict :> IDictionary<string, obj>
+                dataDict |> Seq.map id
+            )
+            //|> Seq.toList
 
         let schema = TableSchema()
         Seq.zip (frame.ColumnKeys |> Seq.map string) frame.ColumnTypes
