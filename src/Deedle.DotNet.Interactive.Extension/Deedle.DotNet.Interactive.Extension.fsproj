@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
@@ -26,11 +26,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="FSharp.Core" Version="6.0.1" />
-    <PackageReference Include="Deedle" Version="2.5.0" />
-    <PackageReference Include="Microsoft.DotNet.Interactive" Version="1.0.0-beta.22256.1" />
-    <PackageReference Include="Microsoft.DotNet.Interactive.Formatting" Version="1.0.0-beta.22256.1" />
-    <PackageReference Include="Microsoft.DotNet.Interactive.FSharp" Version="1.0.0-beta.22256.1" />
+    <PackageReference Update="FSharp.Core" Version="8.0.100" />
+    <PackageReference Include="Deedle" Version="8.8.8.8" />
+    <PackageReference Include="Microsoft.DotNet.Interactive" Version="1.0.0-beta.24075.1" />
+    <PackageReference Include="Microsoft.DotNet.Interactive.Formatting" Version="1.0.0-beta.24075.1" />
+    <PackageReference Include="Microsoft.DotNet.Interactive.FSharp" Version="1.0.0-beta.24075.1" />
   </ItemGroup>
 
   <ItemGroup>
